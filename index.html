@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerGPU</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Шапка сайта -->
+    <header>
+        <div class="header-container">
+            <div class="logo-title" onclick="showProducts()">
+                <img src="logo/VCard.png" alt="Логотип" class="logo">
+                <h1>PowerGPU</h1>
+            </div>
+            <div class="header-buttons">
+                <button id="currency-button" onclick="toggleCurrency()">
+                (₽)
+                </button>
+                <button id="cart-button" onclick="toggleCart()">
+                    Корзина (<span id="cart-count">0</span>)
+                </button>
+                <button id="logout-button" onclick="logout()">Выход</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основной контент -->
+    <div class="main-container">
+        <!-- Поиск и фильтр -->
+        <div class="controls">
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Поиск видеокарт..." onkeyup="filterProducts()">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="setFilter('ALL')">Все бренды</button>
+                <button class="filter-btn" onclick="setFilter('NVIDIA')">NVIDIA</button>
+                <button class="filter-btn" onclick="setFilter('AMD')">AMD</button>
+            </div>
+        </div>
+
+        <!-- Сетка товаров -->
+        <div id="product-grid" class="product-grid">
+            <!-- Товары будут добавлены через JavaScript -->
+        </div>
+
+        <!-- Корзина покупок -->
+        <div id="cart-view" class="cart-view hidden">
+            <div class="cart-header">
+                <h2>Корзина покупок</h2>
+                <button onclick="showProducts()">Вернуться в магазин</button>
+            </div>
+
+            <div id="empty-cart" class="empty-cart hidden">
+                <p>Ваша корзина пуста</p>
+            </div>
+
+            <div id="cart-items">
+                <!-- Элементы корзины будут добавлены через JavaScript -->
+            </div>
+
+            <div id="cart-total" class="cart-total hidden">
+                <h3>Итого: <span id="total-amount">0</span></h3>
+                <button class="checkout-button">Оформить заказ</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

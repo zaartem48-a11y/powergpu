@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <h1>PowerGPU</h1>
+            
+            <!-- Форма входа -->
+            <div id="login-form">
+                <h2>Вход</h2>
+                <input type="text" id="login-username" placeholder="Имя пользователя">
+                <input type="password" id="login-password" placeholder="Пароль">
+                <button onclick="login()">Войти</button>
+                <p>Нет аккаунта? <a href="#" onclick="showRegister()">Зарегистрироваться</a></p>
+            </div>
+
+            <!-- Форма регистрации -->
+            <div id="register-form" class="hidden">
+                <h2>Регистрация</h2>
+                <input type="text" id="register-username" placeholder="Имя пользователя">
+                <input type="email" id="register-email" placeholder="Email">
+                <input type="password" id="register-password" placeholder="Пароль">
+                <input type="password" id="register-confirm" placeholder="Подтвердите пароль">
+                <button onclick="register()">Зарегистрироваться</button>
+                <p>Уже есть аккаунт? <a href="#" onclick="showLogin()">Войти</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="login.js"></script>
+</body>
+</html>

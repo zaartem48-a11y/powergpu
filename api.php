@@ -8,7 +8,10 @@ header('Access-Control-Allow-Headers: Content-Type');
 $action = $_GET['action'] ?? '';
 
 if ($action == 'products') {
-    $result = $conn->query("SELECT * FROM products");
+    $result = $conn->query("SELECT * FROM products 
+    ORDER BY 
+    brand = 'NVIDIA' DESC,
+    release_date DESC");
     $products = [];
     while($row = $result->fetch_assoc()) {
         $products[] = $row;

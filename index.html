@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PowerGPU</title>
+    <title>PowerGPU — Магазин Видеокарт</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Шапка сайта -->
     <header>
         <div class="header-container">
             <div class="logo-title" onclick="showProducts()">
@@ -15,21 +14,14 @@
                 <h1>PowerGPU</h1>
             </div>
             <div class="header-buttons">
-                <button id="currency-button" onclick="toggleCurrency()">
-                (₽)
-                </button>
-                <button id="cart-button" onclick="toggleCart()">
-                    Корзина (<span id="cart-count">0</span>)
-                </button>
+                <button id="cart-button" onclick="toggleCart()">Корзина (<span id="cart-count">0</span>)</button>
                 <button id="logout-button" onclick="logout()">Выход</button>
             </div>
         </div>
     </header>
 
-    <!-- Основной контент -->
     <div class="main-container">
-        <!-- Поиск и фильтр -->
-        <div class="controls">
+        <div class="controls" id="main-controls">
             <div class="search-container">
                 <input type="text" id="search-input" placeholder="Поиск видеокарт..." onkeyup="filterProducts()">
             </div>
@@ -38,32 +30,39 @@
                 <button class="filter-btn" onclick="setFilter('NVIDIA')">NVIDIA</button>
                 <button class="filter-btn" onclick="setFilter('AMD')">AMD</button>
             </div>
+            <div class="memory-filter">
+    <span style="color: #22c55e; font-weight: bold; margin-right: 10px;">Память:</span>
+    <div class="filter-buttons" id="memory-buttons">
+        <button class="filter-btn active" onclick="setMemoryFilter('ALL')">Все</button>
+        <button class="filter-btn" onclick="setMemoryFilter('8GB')">8GB</button>
+        <button class="filter-btn" onclick="setMemoryFilter('12GB')">12GB</button>
+        <button class="filter-btn" onclick="setMemoryFilter('16GB')">16GB</button>
+        <button class="filter-btn" onclick="setMemoryFilter('20GB')">20GB</button>
+        <button class="filter-btn" onclick="setMemoryFilter('24GB')">24GB</button>
+    </div>
+</div>
         </div>
 
-        <!-- Сетка товаров -->
-        <div id="product-grid" class="product-grid">
-            <!-- Товары будут добавлены через JavaScript -->
-        </div>
+        <div id="product-grid" class="product-grid"></div>
 
-        <!-- Корзина покупок -->
         <div id="cart-view" class="cart-view hidden">
             <div class="cart-header">
-                <h2>Корзина покупок</h2>
-                <button onclick="showProducts()">Вернуться в магазин</button>
+                <h2>Ваша корзина</h2>
+                <button class="filter-btn" onclick="showProducts()">Вернуться к покупкам</button>
             </div>
-
-            <div id="empty-cart" class="empty-cart hidden">
-                <p>Ваша корзина пуста</p>
-            </div>
-
-            <div id="cart-items">
-                <!-- Элементы корзины будут добавлены через JavaScript -->
-            </div>
-
+            <div id="empty-cart" class="empty-cart"><p>В корзине пока ничего нет</p></div>
+            <div id="cart-items"></div>
             <div id="cart-total" class="cart-total hidden">
-                <h3>Итого: <span id="total-amount">0</span></h3>
+                <h3>Итого: <span id="total-amount">0 ₽</span></h3>
                 <button class="checkout-button">Оформить заказ</button>
             </div>
+        </div>
+    </div>
+
+    <div id="product-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div id="modal-details"></div>
         </div>
     </div>
 

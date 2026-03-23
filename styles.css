@@ -666,3 +666,34 @@ header {
     display: block !important;
 }
 
+.expandable-filters {
+    display: flex;
+    align-items: center;
+    overflow: hidden; /* Чтобы кнопки не торчали, пока закрыто */
+}
+
+.extra-buttons {
+    display: flex;
+    gap: 8px;
+    max-width: 0; /* Изначально ширина 0 */
+    opacity: 0;
+    transform: translateX(-20px); /* Немного смещаем влево для эффекта вылета */
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* Плавный вылет */
+    pointer-events: none; /* Чтобы нельзя было нажать на невидимые кнопки */
+    margin-left: 0;
+}
+
+/* Когда добавим класс .open через JS */
+.expandable-filters.open .extra-buttons {
+    max-width: 1000px; /* Даем достаточно места для кнопок */
+    opacity: 1;
+    transform: translateX(10px); /* Вылетают вправо */
+    pointer-events: auto;
+    margin-left: 10px;
+}
+
+/* Немного украсим кнопку "Все", чтобы было понятно, что она открывает */
+.main-btn {
+    position: relative;
+    z-index: 2;
+}

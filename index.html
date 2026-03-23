@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PowerGPU — Магазин Видеокарт</title>
+    <title>PowerGPU</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -22,26 +22,46 @@
 
     <div class="main-container">
         <div class="controls" id="main-controls">
-            <div class="search-container">
-                <input type="text" id="search-input" placeholder="Поиск видеокарт..." onkeyup="filterProducts()">
-            </div>
-            <div class="filter-buttons">
-                <button class="filter-btn active" onclick="setFilter('ALL')">Все бренды</button>
-                <button class="filter-btn" onclick="setFilter('NVIDIA')">NVIDIA</button>
-                <button class="filter-btn" onclick="setFilter('AMD')">AMD</button>
-            </div>
-            <div class="memory-filter">
-    <span style="color: #22c55e; font-weight: bold; margin-right: 10px;">Память:</span>
-    <div class="filter-buttons" id="memory-buttons">
-        <button class="filter-btn active" onclick="setMemoryFilter('ALL')">Все</button>
-        <button class="filter-btn" onclick="setMemoryFilter('8GB')">8GB</button>
-        <button class="filter-btn" onclick="setMemoryFilter('12GB')">12GB</button>
-        <button class="filter-btn" onclick="setMemoryFilter('16GB')">16GB</button>
-        <button class="filter-btn" onclick="setMemoryFilter('20GB')">20GB</button>
-        <button class="filter-btn" onclick="setMemoryFilter('24GB')">24GB</button>
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="Поиск видеокарт..." onkeyup="filterProducts()">
+    </div>
+    
+    <div class="filter-group">
+        <span style="color: #22c55e; font-weight: bold; margin-right: 10px;">Чипсет:</span>
+        <div class="filter-buttons" id="brand-buttons">
+            <button class="filter-btn active" onclick="setFilter('ALL')">Все</button>
+            <button class="filter-btn" onclick="setFilter('NVIDIA')">NVIDIA</button>
+            <button class="filter-btn" onclick="setFilter('AMD')">AMD</button>
+        </div>
+    </div>
+
+    <div class="filter-group">
+        <span style="color: #22c55e; font-weight: bold; margin-right: 10px;">Производитель:</span>
+        <div class="filter-buttons" id="vendor-buttons">
+            <button class="filter-btn active" onclick="setVendorFilter('ALL')">Все</button>
+            <button class="filter-btn" onclick="setVendorFilter('ASUS')">ASUS</button>
+            <button class="filter-btn" onclick="setVendorFilter('Gigabyte')">Gigabyte</button>
+            <button class="filter-btn" onclick="setVendorFilter('MSI')">MSI</button>
+            <button class="filter-btn" onclick="setVendorFilter('Palit')">Palit</button>
+            <button class="filter-btn" onclick="setVendorFilter('Sapphire')">Sapphire</button>
+            <button class="filter-btn" onclick="setVendorFilter('KFA2')">KFA2</button>
+            <button class="filter-btn" onclick="setVendorFilter('GALAX')">GALAX</button>
+            <button class="filter-btn" onclick="setVendorFilter('ASRock')">ASRock</button>
+        </div>
+    </div>
+
+    <div class="memory-filter">
+        <span style="color: #22c55e; font-weight: bold; margin-right: 10px;">Память:</span>
+        <div class="filter-buttons" id="memory-buttons">
+            <button class="filter-btn active" onclick="setMemoryFilter('ALL')">Все</button>
+            <button class="filter-btn" onclick="setMemoryFilter('8GB')">8GB</button>
+            <button class="filter-btn" onclick="setMemoryFilter('12GB')">12GB</button>
+            <button class="filter-btn" onclick="setMemoryFilter('16GB')">16GB</button>
+            <button class="filter-btn" onclick="setMemoryFilter('20GB')">20GB</button>
+            <button class="filter-btn" onclick="setMemoryFilter('24GB')">24GB</button>
+        </div>
     </div>
 </div>
-        </div>
 
         <div id="product-grid" class="product-grid"></div>
 

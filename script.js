@@ -1,8 +1,9 @@
 let products = [];
 let cart = JSON.parse(localStorage.getItem('my_cart')) || [];
 
-let currentFilter = 'ALL';
-let currentMemoryFilter = 'ALL';
+let currentFilter = 'ALL';       // Чипсет (NVIDIA/AMD)
+let currentMemoryFilter = 'ALL'; // Память
+let currentVendorFilter = 'ALL'; // Производитель (ASUS/MSI...)
 
 // --- СОХРАНЕНИЕ КОРЗИНЫ ---
 function saveCart() {
@@ -22,41 +23,45 @@ async function init() {
         const prodResp = await fetch('api.php?action=products');
         products = await prodResp.json();
 
-        displayProducts();
+        filterProducts(); // Сразу фильтруем и отображаем
         updateCartCount();
-        console.log(products);
-
     } catch (e) {
         console.error("Ошибка инициализации:", e);
     }
 }
 
-// --- ФИЛЬТРЫ ---
+// --- ФИЛЬТРЫ (ВСЕ ТРИ РАБОТАЮТ ОДИНАКОВО) ---
+
+// Чипсет (NVIDIA/AMD)
 function setFilter(brand) {
     currentFilter = brand;
-
-    document.querySelectorAll('.filter-buttons:not(#memory-buttons) .filter-btn')
-        .forEach(btn => {
-            const text = btn.innerText.trim();
-            btn.classList.toggle('active', 
-                text === brand || (brand === 'ALL' && text === 'Все бренды'));
-        });
-
-    showProducts();
+    const buttons = document.querySelectorAll('#brand-buttons .filter-btn');
+    buttons.forEach(btn => {
+        const text = btn.innerText.trim();
+        btn.classList.toggle('active', text === brand || (brand === 'ALL' && text === 'Все'));
+    });
     filterProducts();
 }
 
+// Производитель (ASUS/MSI...)
+function setVendorFilter(vendor) {
+    currentVendorFilter = vendor;
+    const buttons = document.querySelectorAll('#vendor-buttons .filter-btn');
+    buttons.forEach(btn => {
+        const text = btn.innerText.trim();
+        btn.classList.toggle('active', text === vendor || (vendor === 'ALL' && text === 'Все'));
+    });
+    filterProducts();
+}
+
+// Память
 function setMemoryFilter(size) {
     currentMemoryFilter = size;
-
-    document.querySelectorAll('#memory-buttons .filter-btn')
-        .forEach(btn => {
-            const text = btn.innerText.trim();
-            btn.classList.toggle('active', 
-                text === size || (size === 'ALL' && text === 'Все'));
-        });
-
-    showProducts();
+    const buttons = document.querySelectorAll('#memory-buttons .filter-btn');
+    buttons.forEach(btn => {
+        const text = btn.innerText.trim();
+        btn.classList.toggle('active', text === size || (size === 'ALL' && text === 'Все'));
+    });
     filterProducts();
 }
 
@@ -67,7 +72,8 @@ function filterProducts() {
         return (
             p.name.toLowerCase().includes(search) &&
             (currentFilter === 'ALL' || p.brand === currentFilter) &&
-            (currentMemoryFilter === 'ALL' || p.memory === currentMemoryFilter)
+            (currentMemoryFilter === 'ALL' || p.memory === currentMemoryFilter) &&
+            (currentVendorFilter === 'ALL' || p.vendor === currentVendorFilter)
         );
     });
 
@@ -79,9 +85,7 @@ function renderGrid(list) {
     const grid = document.getElementById('product-grid');
     if (!grid) return;
 
-    grid.innerHTML = list.length 
-        ? '' 
-        : '<p style="color:white; padding:20px;">Ничего не найдено</p>';
+    grid.innerHTML = list.length ? '' : '<p style="color:white; padding:20px;">Ничего не найдено</p>';
 
     list.forEach(p => {
         const div = document.createElement('div');
@@ -115,15 +119,14 @@ function openModal(id) {
             <img src="${p.image}" class="modal-img" onerror="this.src='logo/VCard.png'">
             <div class="modal-info-text">
                 <h2>${p.vendor} ${p.name}</h2>
-                <p><strong>Производитель:</strong> ${p.brand}</p>
+                <p><strong>Производитель (чип):</strong> ${p.brand}</p>
+                <p><strong>Бренд карты:</strong> ${p.vendor}</p>
                 <p><strong>Объем памяти:</strong> ${p.memory}</p>
                 <p><strong>Статус:</strong> ${Number(p.inStock) === 1 ? 'В наличии' : 'Под заказ'}</p>
                 <p><strong>Дата выхода:</strong> ${formatDate(p.release_date)}</p>
                 <hr>
                 <h3>Цена: ${p.price} ₽</h3>
-                <button class="checkout-button" onclick="addToCart(${p.id})">
-                    Добавить в корзину
-                </button>
+                <button class="checkout-button" onclick="addToCart(${p.id})">Добавить в корзину</button>
             </div>
         </div>`;
 
@@ -138,11 +141,7 @@ function closeModal() {
 function addToCart(id) {
     const p = products.find(x => x.id == id);
     if (!p) return;
-
     cart.push({ ...p });
-
-    console.log("КОРЗИНА:", cart); // 👈 ВАЖНО
-
     saveCart();
     updateCartCount();
     updateCartDisplay();
@@ -150,41 +149,33 @@ function addToCart(id) {
 
 function removeFromCart(index) {
     cart.splice(index, 1);
-
     saveCart();
     updateCartCount();
     updateCartDisplay();
 }
 
 function updateCartCount() {
-    document.getElementById('cart-count').innerText = cart.length;
+    const countEl = document.getElementById('cart-count');
+    if (countEl) countEl.innerText = cart.length;
 }
 
 function toggleCart() {
     const cartView = document.getElementById('cart-view');
-
-    if (cartView.classList.contains('hidden')) {
-        showCart();
-    } else {
-        showProducts();
-    }
+    cartView.classList.contains('hidden') ? showCart() : showProducts();
 }
 
 function showCart() {
     document.getElementById('product-grid').classList.add('hidden');
     document.getElementById('main-controls').classList.add('hidden');
-
     const cartView = document.getElementById('cart-view');
     cartView.classList.remove('hidden');
     cartView.style.display = 'block';
-
     updateCartDisplay();
 }
 
 function showProducts() {
     document.getElementById('product-grid').classList.remove('hidden');
     document.getElementById('main-controls').classList.remove('hidden');
-
     const cartView = document.getElementById('cart-view');
     cartView.classList.add('hidden');
     cartView.style.display = 'none';
@@ -206,11 +197,9 @@ function updateCartDisplay() {
     totalDiv.classList.remove('hidden');
 
     let total = 0;
-
     itemsDiv.innerHTML = cart.map((p, i) => {
         const price = String(p.price).replace(/[^0-9]/g, '');
         total += Number(price);
-
         return `
             <div class="cart-item">
                 <div>
@@ -218,15 +207,12 @@ function updateCartDisplay() {
                     <p>${p.price} ₽</p>
                 </div>
                 <button class="remove-btn" onclick="removeFromCart(${i})">Удалить</button>
-            </div>
-        `;
+            </div>`;
     }).join('');
 
-    document.getElementById('total-amount').innerText =
-        total.toLocaleString() + ' ₽';
+    document.getElementById('total-amount').innerText = total.toLocaleString() + ' ₽';
 }
 
-// --- ДОП ---
 function displayProducts() { filterProducts(); }
 
 async function logout() {
@@ -235,11 +221,8 @@ async function logout() {
 }
 
 window.onload = init;
-
 window.onclick = (e) => {
-    if (e.target === document.getElementById('product-modal')) {
-        closeModal();
-    }
+    if (e.target === document.getElementById('product-modal')) closeModal();
 };
 
 function formatDate(dateStr) {

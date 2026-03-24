@@ -93,6 +93,7 @@ async function login() {
         const result = await response.json();
 
         if (result.success) {
+            localStorage.setItem('current_user', username);
             alert('✅ Вход успешен! Переходим в магазин...');
             window.location.href = 'index.html';
         } else {

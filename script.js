@@ -1,5 +1,8 @@
 let products = [];
-let cart = JSON.parse(localStorage.getItem('my_cart')) || [];
+// 1. Получаем текущего пользователя
+const currentUser = localStorage.getItem('current_user') || 'guest';
+// 2. Загружаем корзину именно для этого пользователя
+let cart = JSON.parse(localStorage.getItem(`cart_${currentUser}`)) || [];
 
 let currentFilter = 'ALL';       // Чипсет (NVIDIA/AMD)
 let currentMemoryFilter = 'ALL'; // Память
@@ -7,7 +10,8 @@ let currentVendorFilter = 'ALL'; // Производитель (ASUS/MSI...)
 
 // --- СОХРАНЕНИЕ КОРЗИНЫ ---
 function saveCart() {
-    localStorage.setItem('my_cart', JSON.stringify(cart));
+    // Сохраняем с уникальным ключом пользователя
+    localStorage.setItem(`cart_${currentUser}`, JSON.stringify(cart));
 }
 
 // --- ИНИЦИАЛИЗАЦИЯ ---
@@ -15,19 +19,30 @@ async function init() {
     try {
         const resp = await fetch('api.php?action=check');
         const session = await resp.json();
+        
+        // Если сессия на сервере сдохла, а в локале юзер есть - чистим
         if (!session.loggedin) { 
+            localStorage.removeItem('current_user');
             window.location.href = 'login.html'; 
             return; 
         }
-        
+
         const prodResp = await fetch('api.php?action=products');
         products = await prodResp.json();
 
-        filterProducts(); // Сразу фильтруем и отображаем
+        filterProducts();
         updateCartCount();
     } catch (e) {
         console.error("Ошибка инициализации:", e);
     }
+}
+
+async function logout() {
+    await fetch('api.php?action=logout');
+    // При выходе удаляем только пометку о текущем юзере
+    // Сама корзина останется в localStorage под его именем до следующего входа
+    localStorage.removeItem('current_user'); 
+    window.location.href = 'login.html';
 }
 
 // --- ФИЛЬТРЫ (ВСЕ ТРИ РАБОТАЮТ ОДИНАКОВО) ---
@@ -119,8 +134,8 @@ function openModal(id) {
             <img src="${p.image}" class="modal-img" onerror="this.src='logo/VCard.png'">
             <div class="modal-info-text">
                 <h2>${p.vendor} ${p.name}</h2>
-                <p><strong>Производитель (чип):</strong> ${p.brand}</p>
-                <p><strong>Бренд карты:</strong> ${p.vendor}</p>
+                <p><strong>Бренд:</strong> ${p.brand}</p>
+                <p><strong>Производитель:</strong> ${p.vendor}</p>
                 <p><strong>Объем памяти:</strong> ${p.memory}</p>
                 <p><strong>Статус:</strong> ${Number(p.inStock) === 1 ? 'В наличии' : 'Под заказ'}</p>
                 <p><strong>Дата выхода:</strong> ${formatDate(p.release_date)}</p>

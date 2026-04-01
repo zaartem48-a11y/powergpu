@@ -14,14 +14,20 @@
                 <h1>PowerGPU</h1>
             </div>
             <div class="header-buttons">
-                <button id="cart-button" onclick="toggleCart()">Корзина (<span id="cart-count">0</span>)</button>
-                <button id="logout-button" onclick="logout()">Выход</button>
+                <button onclick="showProfile()">Профиль</button> <button id="cart-button" onclick="toggleCart()">Корзина (<span id="cart-count">0</span>)</button>
             </div>
         </div>
     </header>
 
     <div class="main-container">
         <div class="controls" id="main-controls">
+            <div class="filter-group">
+                <span style="color: #22c55e; font-weight: bold; margin-right: 10px;">Цена (₽):</span>
+            <div class="price-inputs">
+                <input type="number" id="price-min" placeholder="От" oninput="filterProducts()" min="0">
+                <input type="number" id="price-max" placeholder="До" oninput="filterProducts()" min="0">
+            </div>
+            </div>
     <div class="search-container">
         <input type="text" id="search-input" placeholder="Поиск видеокарт..." onkeyup="filterProducts()">
     </div>
@@ -64,6 +70,12 @@
 </div>
 
         <div id="product-grid" class="product-grid"></div>
+        <div id="profile-view" class="profile-view hidden">
+        <div class="profile-header">
+            <button class="filter-btn" onclick="showProducts()">← Назад к товарам</button>
+        </div>
+        <div id="profile-info"></div>
+        </div>
 
         <div id="cart-view" class="cart-view hidden">
             <div class="cart-header">
@@ -74,7 +86,7 @@
             <div id="cart-items"></div>
             <div id="cart-total" class="cart-total hidden">
                 <h3>Итого: <span id="total-amount">0 ₽</span></h3>
-                <button class="checkout-button">Оформить заказ</button>
+                <button class="checkout-button" onclick="openOrderModal()">Оформить заказ</button>
             </div>
         </div>
     </div>
@@ -85,6 +97,30 @@
             <div id="modal-details"></div>
         </div>
     </div>
+
+    <div id="order-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeOrderModal()">&times;</span>
+        <h2>Оформление заказа</h2>
+        <form id="order-form" onsubmit="submitOrder(event)">
+            <input type="text" id="order-city" placeholder="Город" required>
+            <input type="text" id="order-street" placeholder="Улица" required>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="order-house" placeholder="Дом" required>
+                <input type="text" id="order-ent" placeholder="Подъезд">
+                <input type="text" id="order-flat" placeholder="Кв.">
+            </div>
+            <button type="submit" class="checkout-button" style="margin-top: 15px;">Подтвердить заказ</button>
+        </form>
+    </div>
+</div>
+
+<div id="order-details-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeOrderDetailsModal()">&times;</span>
+        <div id="order-full-info"></div>
+    </div>
+</div>
 
     <script src="script.js"></script>
 </body>

@@ -82,14 +82,21 @@ function setMemoryFilter(size) {
 
 function filterProducts() {
     const search = document.getElementById('search-input')?.value.toLowerCase() || "";
+    
+    // Получаем значения цен и переводим в числа
+    const minPrice = parseFloat(document.getElementById('price-min').value) || 0;
+    const maxPrice = parseFloat(document.getElementById('price-max').value) || Infinity;
 
     const filtered = products.filter(p => {
-        return (
-            p.name.toLowerCase().includes(search) &&
-            (currentFilter === 'ALL' || p.brand === currentFilter) &&
-            (currentMemoryFilter === 'ALL' || p.memory === currentMemoryFilter) &&
-            (currentVendorFilter === 'ALL' || p.vendor === currentVendorFilter)
-        );
+        const matchesSearch = p.name.toLowerCase().includes(search);
+        const matchesBrand = (currentFilter === 'ALL' || p.brand === currentFilter);
+        const matchesMemory = (currentMemoryFilter === 'ALL' || p.memory === currentMemoryFilter);
+        const matchesVendor = (currentVendorFilter === 'ALL' || p.vendor === currentVendorFilter);
+        
+        // Проверка цены
+        const matchesPrice = p.price >= minPrice && p.price <= maxPrice;
+
+        return matchesSearch && matchesBrand && matchesMemory && matchesVendor && matchesPrice;
     });
 
     renderGrid(filtered);
@@ -129,6 +136,14 @@ function openModal(id) {
     const p = products.find(x => x.id == id);
     if (!p) return;
 
+    // Проверяем наличие: 1 - есть, 0 - нет
+    const isAvailable = Number(p.inStock) === 1;
+    
+    // Формируем кнопку заранее
+    const buyButton = isAvailable 
+        ? `<button class="checkout-button" onclick="addToCart(${p.id})">Добавить в корзину</button>`
+        : `<button class="checkout-button" style="background-color: #4b5563; cursor: not-allowed;" disabled>Нет в наличии</button>`;
+
     document.getElementById('modal-details').innerHTML = `
         <div class="modal-grid">
             <img src="${p.image}" class="modal-img" onerror="this.src='logo/VCard.png'">
@@ -137,11 +152,15 @@ function openModal(id) {
                 <p><strong>Бренд:</strong> ${p.brand}</p>
                 <p><strong>Производитель:</strong> ${p.vendor}</p>
                 <p><strong>Объем памяти:</strong> ${p.memory}</p>
-                <p><strong>Статус:</strong> ${Number(p.inStock) === 1 ? 'В наличии' : 'Под заказ'}</p>
+                <p><strong>Статус:</strong> 
+                    <span style="color: ${isAvailable ? '#22c55e' : '#ef4444'}">
+                        ${isAvailable ? 'В наличии' : 'Нет в наличии'}
+                    </span>
+                </p>
                 <p><strong>Дата выхода:</strong> ${formatDate(p.release_date)}</p>
-                <hr>
-                <h3>Цена: ${p.price} ₽</h3>
-                <button class="checkout-button" onclick="addToCart(${p.id})">Добавить в корзину</button>
+                <hr style="border: 0; border-top: 1px solid #30363d; margin: 15px 0;">
+                <h3>Цена: ${Number(p.price).toLocaleString()} ₽</h3>
+                ${buyButton}
             </div>
         </div>`;
 
@@ -156,10 +175,20 @@ function closeModal() {
 function addToCart(id) {
     const p = products.find(x => x.id == id);
     if (!p) return;
-    cart.push({ ...p });
+
+    const existingItem = cart.find(item => item.id === id);
+
+    if (existingItem) {
+        existingItem.quantity = (existingItem.quantity || 1) + 1;
+    } else {
+        // Добавляем новый товар и СРАЗУ ставим ему количество 1
+        cart.push({ ...p, quantity: 1 });
+    }
+
     saveCart();
     updateCartCount();
     updateCartDisplay();
+    alert('Товар добавлен в корзину');
 }
 
 function removeFromCart(index) {
@@ -174,10 +203,7 @@ function updateCartCount() {
     if (countEl) countEl.innerText = cart.length;
 }
 
-function toggleCart() {
-    const cartView = document.getElementById('cart-view');
-    cartView.classList.contains('hidden') ? showCart() : showProducts();
-}
+function toggleCart() { showScreen('cart-view'); updateCartDisplay(); }
 
 function showCart() {
     document.getElementById('product-grid').classList.add('hidden');
@@ -188,12 +214,141 @@ function showCart() {
     updateCartDisplay();
 }
 
-function showProducts() {
-    document.getElementById('product-grid').classList.remove('hidden');
-    document.getElementById('main-controls').classList.remove('hidden');
-    const cartView = document.getElementById('cart-view');
-    cartView.classList.add('hidden');
-    cartView.style.display = 'none';
+function showProducts() { showScreen('products'); }
+
+function openOrderModal() {
+    document.getElementById('order-modal').style.display = 'flex';
+}
+
+function closeOrderModal() {
+    document.getElementById('order-modal').style.display = 'none';
+}
+
+async function submitOrder(event) {
+    event.preventDefault();
+
+    const address = `Г. ${document.getElementById('order-city').value}, ул. ${document.getElementById('order-street').value}, д. ${document.getElementById('order-house').value}, под. ${document.getElementById('order-ent').value || '-'}, кв. ${document.getElementById('order-flat').value || '-'}`;
+
+    const orderData = {
+        items: cart, // Весь массив корзины
+        total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+        address: address
+    };
+
+    try {
+        const resp = await fetch('api.php?action=create_order', {
+            method: 'POST',
+            body: JSON.stringify(orderData)
+        });
+        const result = await resp.json();
+
+        if (result.success) {
+            alert('Заказ успешно оформлен!');
+            cart = []; // Чистим корзину
+            saveCart();
+            updateCartCount();
+            closeOrderModal();
+            showProducts(); // Возвращаемся в каталог
+        } else {
+            alert('Ошибка: ' + result.error);
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// --- ИСТОРИЯ ЗАКАЗОВ ---
+
+async function showHistory() {
+    showScreen('profile-view');
+    const infoDiv = document.getElementById('profile-info');
+    infoDiv.innerHTML = '<h3>Загрузка истории...</h3>';
+
+    try {
+        const resp = await fetch('api.php?action=get_history');
+        const orders = await resp.json();
+
+        let html = `<h2>История заказов</h2><button class="filter-btn" onclick="showProfile()">← Назад в профиль</button><br><br>`;
+        
+        if (orders.length === 0) {
+            html += '<p>Вы еще ничего не заказывали</p>';
+        } else {
+            orders.forEach(ord => {
+                const items = JSON.parse(ord.items);
+                const itemsList = items.map(i => `${i.vendor} ${i.name} (${i.quantity} шт.)`).join(', ');
+    
+                html += `
+                <div class="order-card" onclick='openOrderDetails(${JSON.stringify(ord)})'>
+                    <p><strong>Заказ от ${formatDate(ord.created_at)}</strong></p>
+                    <p class="order-items-preview">${itemsList}</p>
+                    <p>Сумма: <strong>${Number(ord.total_price).toLocaleString()} ₽</strong></p>
+                    <p>Статус: <span style="color:#22c55e">${ord.status}</span></p>
+                </div>`;
+});
+        }
+        infoDiv.innerHTML = html;
+    } catch (e) {
+        infoDiv.innerHTML = '<p>Ошибка загрузки истории</p>';
+    }
+}
+
+function openOrderDetails(ord) {
+    const items = JSON.parse(ord.items);
+    let itemsHtml = items.map(i => `
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;">
+            <span>${i.vendor} ${i.name} (${i.quantity} шт.)</span>
+            <span>${(i.price * i.quantity).toLocaleString()} ₽</span>
+        </div>
+    `).join('');
+
+    document.getElementById('order-full-info').innerHTML = `
+        <h2 style="color:#22c55e;">Детали заказа</h2>
+        <p><strong>Дата:</strong> ${formatDate(ord.created_at)}</p>
+        <p><strong>Статус:</strong> <span style="color:#22c55e;">${ord.status}</span></p>
+        <hr>
+        <h4 style="margin-bottom:10px;">Товары:</h4>
+        ${itemsHtml}
+        <hr>
+        <p><strong>Адрес доставки:</strong><br>${ord.address || 'Адрес не указан'}</p>
+        <h3 style="text-align:right; color:#22c55e; margin-top:20px;">Итого: ${Number(ord.total_price).toLocaleString()} ₽</h3>
+    `;
+
+    document.getElementById('order-details-modal').style.display = 'flex';
+}
+
+function closeOrderDetailsModal() {
+    document.getElementById('order-details-modal').style.display = 'none';
+}
+
+function showProfile() {
+    showScreen('profile-view');
+    const userName = localStorage.getItem('user_name') || 'Пользователь';
+    document.getElementById('profile-info').innerHTML = `
+        <div class="profile-card">
+            <h2>Личный кабинет</h2>
+            <p><strong>Логин:</strong> ${userName}</p>
+            <p><strong>Статус:</strong> Постоянный покупатель</p>
+            <br>
+            <button class="filter-btn" style="width:100%; margin-bottom:10px;" onclick="showHistory()">История заказов</button>
+            <button class="logout-btn-big" onclick="logout()">Выйти из аккаунта</button>
+        </div>
+    `;
+}
+
+function changeQuantity(id, delta) {
+    const item = cart.find(item => item.id === id);
+    if (!item) return;
+
+    item.quantity = (item.quantity || 1) + delta;
+
+    // Если количество стало 0 или меньше — выкидываем из корзины
+    if (item.quantity <= 0) {
+        cart = cart.filter(item => item.id !== id);
+    }
+
+    saveCart();
+    updateCartCount();
+    updateCartDisplay();
 }
 
 function updateCartDisplay() {
@@ -211,21 +366,32 @@ function updateCartDisplay() {
     emptyDiv.classList.add('hidden');
     totalDiv.classList.remove('hidden');
 
-    let total = 0;
-    itemsDiv.innerHTML = cart.map((p, i) => {
-        const price = String(p.price).replace(/[^0-9]/g, '');
-        total += Number(price);
+    let totalMoney = 0;
+    itemsDiv.innerHTML = cart.map((p) => {
+        // Если вдруг quantity потерялся, считаем как 1
+        const qty = p.quantity || 1;
+        const itemTotal = Number(p.price) * qty;
+        totalMoney += itemTotal;
+
         return `
             <div class="cart-item">
-                <div>
+                <div class="cart-item-info">
                     <h4>${p.vendor} ${p.name}</h4>
-                    <p>${p.price} ₽</p>
+                    <div class="cart-controls-row">
+                        <button class="qty-btn" onclick="changeQuantity(${p.id}, -1)">-</button>
+                        <span class="qty-num">${qty}</span>
+                        <button class="qty-btn" onclick="changeQuantity(${p.id}, 1)">+</button>
+                        <span class="price-each">× ${Number(p.price).toLocaleString()} ₽</span>
+                    </div>
                 </div>
-                <button class="remove-btn" onclick="removeFromCart(${i})">Удалить</button>
+                <div class="cart-item-right">
+                    <strong>${itemTotal.toLocaleString()} ₽</strong>
+                    <button class="remove-btn-small" onclick="changeQuantity(${p.id}, -${qty})">Удалить</button>
+                </div>
             </div>`;
     }).join('');
 
-    document.getElementById('total-amount').innerText = total.toLocaleString() + ' ₽';
+    document.getElementById('total-amount').innerText = totalMoney.toLocaleString() + ' ₽';
 }
 
 function displayProducts() { filterProducts(); }
@@ -243,4 +409,20 @@ window.onclick = (e) => {
 function formatDate(dateStr) {
     const date = new Date(dateStr);
     return date.toLocaleDateString('ru-RU');
+}
+
+function showScreen(screenId) {
+    // Скрываем вообще всё
+    document.getElementById('product-grid').classList.add('hidden');
+    document.getElementById('main-controls').classList.add('hidden');
+    document.getElementById('cart-view').classList.add('hidden');
+    document.getElementById('profile-view').classList.add('hidden');
+
+    // Показываем только то, что нужно
+    if (screenId === 'products') {
+        document.getElementById('product-grid').classList.remove('hidden');
+        document.getElementById('main-controls').classList.remove('hidden');
+    } else {
+        document.getElementById(screenId).classList.remove('hidden');
+    }
 }

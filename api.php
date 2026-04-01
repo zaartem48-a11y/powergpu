@@ -1,48 +1,35 @@
 <?php
+session_start();
 require_once 'config.php';
+
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
 
 $action = $_GET['action'] ?? '';
 
+// 1. Получение товаров
 if ($action == 'products') {
-    $result = $conn->query("SELECT * FROM products 
-    ORDER BY 
-    brand = 'NVIDIA' DESC,
-    release_date DESC");
+    $result = $conn->query("SELECT * FROM products ORDER BY release_date DESC");
     $products = [];
     while($row = $result->fetch_assoc()) {
+        $row['id'] = (int)$row['id'];
+        $row['price'] = (int)$row['price'];
+        $row['inStock'] = (int)$row['inStock'];
         $products[] = $row;
     }
     echo json_encode($products);
     exit;
 }
 
-if ($action == 'register') {
-    $data = json_decode(file_get_contents('php://input'), true);
-    $username = trim($data['username'] ?? '');
-    $email = trim($data['email'] ?? '');
-    $password = $data['password'] ?? '';
-    
-    if (empty($username) || empty($email) || empty($password)) {
-        echo json_encode(['success' => false, 'error' => 'Заполните все поля']);
-        exit;
-    }
-    
-    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-    $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $username, $email, $hashed_password);
-    
-    if ($stmt->execute()) {
-        echo json_encode(['success' => true]);
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Пользователь уже существует']);
-    }
+// 2. Проверка входа
+if ($action == 'check') {
+    echo json_encode([
+        'loggedin' => isset($_SESSION['loggedin']),
+        'username' => $_SESSION['username'] ?? ''
+    ]);
     exit;
 }
 
+// 3. Вход
 if ($action == 'login') {
     $data = json_decode(file_get_contents('php://input'), true);
     $username = trim($data['username'] ?? '');
@@ -51,12 +38,10 @@ if ($action == 'login') {
     $stmt = $conn->prepare("SELECT id, password FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
-    $result = $stmt->get_result();
-    $user = $result->fetch_assoc();
+    $user = $stmt->get_result()->fetch_assoc();
     
     if ($user && password_verify($password, $user['password'])) {
         $_SESSION['loggedin'] = true;
-        $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $username;
         echo json_encode(['success' => true]);
     } else {
@@ -65,14 +50,72 @@ if ($action == 'login') {
     exit;
 }
 
-if ($action == 'check') {
-    echo json_encode(['loggedin' => isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true]);
-    exit;
-}
-
+// 4. Выход
 if ($action == 'logout') {
     session_destroy();
     echo json_encode(['success' => true]);
+    exit;
+}
+
+// 5. Регистрация
+if ($action == 'register') {
+    $data = json_decode(file_get_contents('php://input'), true);
+    $username = trim($data['username'] ?? '');
+    $email = trim($data['email'] ?? '');
+    $password = $data['password'] ?? '';
+    
+    $hashed = password_hash($password, PASSWORD_DEFAULT);
+    $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $username, $email, $hashed);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Ошибка или юзер уже есть']);
+    }
+    exit;
+}
+
+// 6. Оформление заказа (ТЕПЕРЬ ВНЕ РЕГИСТРАЦИИ)
+if ($action == 'create_order') {
+    if (!isset($_SESSION['loggedin'])) {
+        echo json_encode(['success' => false, 'error' => 'Нужна авторизация']);
+        exit;
+    }
+
+    $data = json_decode(file_get_contents('php://input'), true);
+    $username = $_SESSION['username'];
+    $items = json_encode($data['items'], JSON_UNESCAPED_UNICODE);
+    $total = $data['total'];
+    $address = $data['address'];
+
+    $stmt = $conn->prepare("INSERT INTO orders (username, items, total_price, address) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssis", $username, $items, $total, $address);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true]);
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Ошибка БД']);
+    }
+    exit;
+}
+
+// 7. Получение истории заказов
+if ($action == 'get_history') {
+    if (!isset($_SESSION['loggedin'])) {
+        echo json_encode([]);
+        exit;
+    }
+
+    $username = $_SESSION['username'];
+    // Защита от SQL-инъекции: используем переменную из сессии в кавычках
+    $result = $conn->query("SELECT * FROM orders WHERE username = '$username' ORDER BY created_at DESC");
+    
+    $orders = [];
+    while($row = $result->fetch_assoc()) {
+        $orders[] = $row;
+    }
+    echo json_encode($orders);
     exit;
 }
 ?>

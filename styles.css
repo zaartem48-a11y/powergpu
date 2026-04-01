@@ -339,6 +339,19 @@ header {
     margin: 10px 0;
 }
 
+.price-each { color: #888; font-size: 0.9em; margin-left: 10px; }
+
+.remove-btn-small {
+    background: none;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
 .add-to-cart-btn {
     background-color: #22c55e;
     color: #000;
@@ -387,6 +400,36 @@ header {
     margin: 0;
 }
 
+.qty-num { font-weight: bold; color: white; }
+
+.profile-card {
+    background: #1e1e1e;
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    max-width: 400px;
+    margin: 50px auto;
+}
+.logout-btn-big {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+}
+
+.logout-btn-big:hover { background-color: #dc2626; }
+
+.cart-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+}
+
 .cart-header button {
     padding: 10px 20px;
     background-color: #22c55e;
@@ -417,14 +460,29 @@ header {
 }
 
 .cart-item {
-    background: #111827;
-    border: 1px solid #30363d;
-    padding: 15px;
-    margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: #1e1e1e;
+    padding: 15px;
+    margin-bottom: 10px;
     border-radius: 8px;
+}
+
+.cart-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.qty-btn {
+    background: #22c55e;
+    color: white;
+    border: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .cart-item-info h4 {
@@ -664,5 +722,128 @@ header {
 
 #cart-view:not(.hidden) {
     display: block !important;
+}
+
+.price-inputs {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.price-inputs input {
+    background-color: #2a2a2a;
+    border: 2px solid #3f3f3f;
+    border-radius: 6px;
+    color: white;
+    padding: 5px 10px;
+    width: 80px; /* Компактный размер */
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.price-inputs input:focus {
+    border-color: #22c55e;
+}
+
+/* Убираем стрелочки у поля типа number для красоты */
+.price-inputs input::-webkit-outer-spin-button,
+.price-inputs input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.order-card {
+    background-color: #161b22; /* Темно-серый фон как у карточек товаров */
+    border: 1px solid #30363d; /* Тонкая рамка */
+    border-left: 4px solid #22c55e; /* Акцентная зеленая полоса слева */
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.order-card:hover {
+    background-color: #1c2128; /* Чуть светлее при наведении */
+    border-color: #22c55e;
+    transform: translateX(5px); /* Легкий сдвиг вправо для эффекта кликабельности */
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.1);
+}
+
+.order-card p {
+    margin: 0;
+    color: #e6edf3;
+}
+
+.order-card strong {
+    color: #22c55e;
+}
+
+.order-items-preview {
+    font-size: 0.9em;
+    color: #8b949e !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Стили для модального окна оформления заказа */
+#order-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px 0;
+    width: 100%; /* Убедимся, что форма занимает всю ширину модалки */
+    box-sizing: border-box; 
+}
+
+#order-form input {
+    background-color: #2a2a2a;
+    border: 2px solid #3f3f3f;
+    border-radius: 8px;
+    color: white;
+    padding: 12px 15px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    outline: none;
+    /* КРИТИЧЕСКИ ВАЖНО: чтобы padding не расширял input */
+    box-sizing: border-box; 
+    width: 100%; /* По умолчанию на всю ширину */
+}
+
+/* Контейнер для коротких полей (дом, под, кв) */
+.order-row-mini {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.order-row-mini input {
+    flex: 1; 
+    /* Уменьшаем min-width, чтобы поля могли сжиматься сильнее */
+    min-width: 0; 
+    /* Немного уменьшим боковые отступы внутри маленьких полей */
+    padding: 12px 8px; 
+}
+
+#order-form input:focus {
+    border-color: #22c55e;
+    background-color: #333;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+}
+
+#order-form input::placeholder {
+    color: #888;
+    font-size: 14px;
+}
+
+#order-modal h2 {
+    color: #22c55e;
+    margin-bottom: 20px;
+    text-align: center;
 }
 

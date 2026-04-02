@@ -276,15 +276,18 @@ async function showHistory() {
             orders.forEach(ord => {
                 const items = JSON.parse(ord.items);
                 const itemsList = items.map(i => `${i.vendor} ${i.name} (${i.quantity} шт.)`).join(', ');
-    
+                
+                // --- ВОТ ТУТ ГЕНЕРИРУЕМ КОД ---
+                const orderCode = generateOrderCode(ord.id); 
+
                 html += `
                 <div class="order-card" onclick='openOrderDetails(${JSON.stringify(ord)})'>
-                    <p><strong>Заказ от ${formatDate(ord.created_at)}</strong></p>
+                    <p><strong>Заказ <span style="color:#22c55e">${orderCode}</span> от ${formatDate(ord.created_at)}</strong></p>
                     <p class="order-items-preview">${itemsList}</p>
                     <p>Сумма: <strong>${Number(ord.total_price).toLocaleString()} ₽</strong></p>
                     <p>Статус: <span style="color:#22c55e">${ord.status}</span></p>
                 </div>`;
-});
+            });
         }
         infoDiv.innerHTML = html;
     } catch (e) {
@@ -292,8 +295,26 @@ async function showHistory() {
     }
 }
 
+function generateOrderCode(id) {
+    // Используем хеширование или просто превращаем ID в строку с префиксом
+    // Чтобы код был уникальным для каждого заказа, но постоянным
+    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // без похожих 0/O, 1/I
+    let code = "";
+    let n = id * 12345; // "засаливаем" ID, чтобы коды не шли просто 1, 2, 3...
+    
+    for (let i = 0; i < 6; i++) {
+        code += alphabet.charAt(n % alphabet.length);
+        n = Math.floor(n / alphabet.length);
+    }
+    return `#${code}`;
+}
+
 function openOrderDetails(ord) {
     const items = JSON.parse(ord.items);
+    
+    // Генерируем тот же самый код на основе ID из базы
+    const orderCode = generateOrderCode(ord.id); 
+
     let itemsHtml = items.map(i => `
         <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;">
             <span>${i.vendor} ${i.name} (${i.quantity} шт.)</span>
@@ -302,13 +323,13 @@ function openOrderDetails(ord) {
     `).join('');
 
     document.getElementById('order-full-info').innerHTML = `
-        <h2 style="color:#22c55e;">Детали заказа</h2>
+        <h2 style="color:#22c55e;">Заказ ${orderCode}</h2>
         <p><strong>Дата:</strong> ${formatDate(ord.created_at)}</p>
         <p><strong>Статус:</strong> <span style="color:#22c55e;">${ord.status}</span></p>
-        <hr>
+        <hr style="border: 0; border-top: 1px solid #333; margin: 15px 0;">
         <h4 style="margin-bottom:10px;">Товары:</h4>
         ${itemsHtml}
-        <hr>
+        <hr style="border: 0; border-top: 1px solid #333; margin: 15px 0;">
         <p><strong>Адрес доставки:</strong><br>${ord.address || 'Адрес не указан'}</p>
         <h3 style="text-align:right; color:#22c55e; margin-top:20px;">Итого: ${Number(ord.total_price).toLocaleString()} ₽</h3>
     `;

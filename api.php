@@ -118,4 +118,47 @@ if ($action == 'get_history') {
     echo json_encode($orders);
     exit;
 }
+
+if ($action == 'get_all_orders') {
+    // Проверяем, залогинен ли юзер и является ли он админом
+    if (!isset($_SESSION['loggedin']) || $_SESSION['username'] !== 'admin') {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'Доступ запрещен']);
+        exit;
+    }
+
+    // Выбираем все заказы, сортируем по дате (новые сверху)
+    $result = $conn->query("SELECT * FROM orders ORDER BY created_at DESC");
+    
+    $orders = [];
+    while($row = $result->fetch_assoc()) {
+        $orders[] = $row;
+    }
+    echo json_encode($orders);
+    exit;
+}
+
+// 9. Удаление заказа (ТОЛЬКО ДЛЯ АДМИНА)
+if ($action == 'delete_order') {
+    if (!isset($_SESSION['loggedin']) || $_SESSION['username'] !== 'admin') {
+        echo json_encode(['success' => false, 'error' => 'Доступ запрещен']);
+        exit;
+    }
+
+    $id = (int)($_GET['id'] ?? 0);
+
+    if ($id > 0) {
+        $stmt = $conn->prepare("DELETE FROM orders WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Ошибка удаления']);
+        }
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Неверный ID']);
+    }
+    exit;
+}
 ?>

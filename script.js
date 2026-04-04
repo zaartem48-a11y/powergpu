@@ -8,6 +8,8 @@ let currentFilter = 'ALL';       // Чипсет (NVIDIA/AMD)
 let currentMemoryFilter = 'ALL'; // Память
 let currentVendorFilter = 'ALL'; // Производитель (ASUS/MSI...)
 
+let allOrders = [];
+
 // --- СОХРАНЕНИЕ КОРЗИНЫ ---
 function saveCart() {
     // Сохраняем с уникальным ключом пользователя
@@ -107,9 +109,14 @@ function renderGrid(list) {
     const grid = document.getElementById('product-grid');
     if (!grid) return;
 
+    // Сначала очищаем сетку и проверяем, есть ли товары
     grid.innerHTML = list.length ? '' : '<p style="color:white; padding:20px;">Ничего не найдено</p>';
 
     list.forEach(p => {
+        // !!! ПЕРЕМЕННЫЕ ДОЛЖНЫ БЫТЬ ВНУТРИ ЦИКЛА, ЧТОБЫ ВИДЕТЬ ТОВАР 'p' !!!
+        const isBtnDisabled = p.inStock == 0 || currentUser === 'admin';
+        const btnText = currentUser === 'admin' ? 'Режим админа' : (p.inStock == 1 ? 'В корзину' : 'Нет в наличии');
+        
         const div = document.createElement('div');
         div.className = 'product-card';
         div.onclick = () => openModal(p.id);
@@ -120,11 +127,12 @@ function renderGrid(list) {
                 <div class="brand-badge">${p.brand}</div>
                 <h3>${p.vendor} ${p.name}</h3>
                 <p class="product-memory">Память: ${p.memory}</p>
-                <p class="product-price">${p.price} ₽</p> 
-                <button class="add-to-cart-btn"
+                <p class="product-price">${Number(p.price).toLocaleString()} ₽</p> 
+                
+                <button class="add-to-cart-btn" 
                     onclick="event.stopPropagation(); addToCart(${p.id})"
-                    ${p.inStock == 0 ? 'disabled' : ''}>
-                    ${p.inStock == 1 ? 'В корзину' : 'Нет в наличии'}
+                    ${isBtnDisabled ? 'disabled style="background: #30363d; cursor: not-allowed;"' : ''}>
+                    ${btnText}
                 </button>
             </div>`;
         grid.appendChild(div);
@@ -173,15 +181,20 @@ function closeModal() {
 
 // --- КОРЗИНА ---
 function addToCart(id) {
+    if (currentUser === 'admin') {
+        alert('Администратор не может совершать покупки');
+        return;
+    }
+
     const p = products.find(x => x.id == id);
     if (!p) return;
 
+    // ВОТ ЭТОЙ СТРОКИ НЕ ХВАТАЛО:
     const existingItem = cart.find(item => item.id === id);
 
     if (existingItem) {
         existingItem.quantity = (existingItem.quantity || 1) + 1;
     } else {
-        // Добавляем новый товар и СРАЗУ ставим ему количество 1
         cart.push({ ...p, quantity: 1 });
     }
 
@@ -343,14 +356,22 @@ function closeOrderDetailsModal() {
 
 function showProfile() {
     showScreen('profile-view');
-    const userName = localStorage.getItem('user_name') || 'Пользователь';
+    const userName = localStorage.getItem('current_user') || 'Пользователь';
+    
+    let adminButton = '';
+    // Если зашел админ, добавляем кнопку перехода в панель
+    if (userName === 'admin') {
+        adminButton = `<button class="filter-btn" style="width:100%; margin-bottom:10px; background-color: #eab308; color: black;" onclick="showAdminPanel()">Админ-панель</button>`;
+    }
+
     document.getElementById('profile-info').innerHTML = `
         <div class="profile-card">
             <h2>Личный кабинет</h2>
             <p><strong>Логин:</strong> ${userName}</p>
-            <p><strong>Статус:</strong> Постоянный покупатель</p>
+            <p><strong>Статус:</strong> ${userName === 'admin' ? 'Администратор' : 'Постоянный покупатель'}</p>
             <br>
-            <button class="filter-btn" style="width:100%; margin-bottom:10px;" onclick="showHistory()">История заказов</button>
+            ${adminButton}
+            <button class="filter-btn" style="width:100%; margin-bottom:10px;" onclick="showHistory()">История моих заказов</button>
             <button class="logout-btn-big" onclick="logout()">Выйти из аккаунта</button>
         </div>
     `;
@@ -446,4 +467,126 @@ function showScreen(screenId) {
     } else {
         document.getElementById(screenId).classList.remove('hidden');
     }
+}
+
+async function showAdminPanel() {
+    showScreen('admin-view');
+    const listDiv = document.getElementById('admin-orders-list');
+    listDiv.innerHTML = '<h3 style="color:white">Загрузка всех заказов...</h3>';
+
+    try {
+        // Нам нужен новый action в api.php, который отдает ВООБЩЕ ВСЕ заказы
+        const resp = await fetch('api.php?action=get_all_orders');
+        allOrders = await resp.json();
+        renderAdminOrders(allOrders);
+    } catch (e) {
+        listDiv.innerHTML = '<p style="color:red">Ошибка доступа. Вы не админ или сессия истекла.</p>';
+    }
+}
+
+function renderAdminOrders(orders) {
+    const listDiv = document.getElementById('admin-orders-list');
+    listDiv.innerHTML = '';
+
+    if (orders.length === 0) {
+        listDiv.innerHTML = '<p style="color:#888; grid-column: 1/-1; text-align:center;">Заказов не найдено</p>';
+        return;
+    }
+
+    orders.forEach(ord => {
+        const orderCode = generateOrderCode(ord.id);
+        const items = JSON.parse(ord.items);
+        
+        const div = document.createElement('div');
+        div.className = 'admin-card';
+        // Добавляем ID элементу, чтобы легко удалить его из DOM
+        div.id = `order-row-${ord.id}`; 
+        
+        div.innerHTML = `
+            <div style="border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 10px;">
+                <span style="color:#22c55e; font-weight:bold;">${orderCode}</span>
+                <span style="color:#888; float:right;">@${ord.username}</span>
+            </div>
+            <p style="font-size: 0.9em; height: 40px; overflow: hidden; color: #ccc;">
+                ${items.map(i => i.name).join(', ')}
+            </p>
+            <p style="font-weight:bold; margin-top:10px;">${Number(ord.total_price).toLocaleString()} ₽</p>
+            
+            <div class="admin-actions">
+                <button class="btn-more" onclick='openOrderDetails(${JSON.stringify(ord)})'>Подробнее</button>
+                <button class="btn-delete" onclick="deleteOrder(${ord.id})">
+                    🗑️ Удалить
+                </button>
+            </div>
+        `;
+        listDiv.appendChild(div);
+    });
+}
+
+// Исправленное удаление (с мгновенным исчезновением)
+async function deleteOrder(id) {
+    if (!confirm('Удалить этот заказ навсегда?')) return;
+
+    try {
+        const resp = await fetch(`api.php?action=delete_order&id=${id}`, { method: 'POST' });
+        const result = await resp.json();
+
+        if (result.success) {
+            // 1. Удаляем из глобального массива, чтобы поиск продолжал работать корректно
+            allOrders = allOrders.filter(o => o.id !== id);
+            
+            // 2. Мгновенно удаляем элемент из DOM с анимацией (опционально)
+            const element = document.getElementById(`order-row-${id}`);
+            if (element) {
+                element.style.opacity = '0';
+                element.style.transform = 'scale(0.9)';
+                setTimeout(() => {
+                    element.remove();
+                    // Если после удаления заказов не осталось, пишем "Пусто"
+                    if (allOrders.length === 0) renderAdminOrders([]);
+                }, 200);
+            }
+        } else {
+            alert('Ошибка сервера: ' + result.error);
+        }
+    } catch (e) {
+        console.error("Ошибка при удалении:", e);
+        alert('Не удалось связаться с сервером');
+    }
+}
+
+// Обновляем функцию переключения экранов
+function showScreen(screenId) {
+    const screens = ['product-grid', 'main-controls', 'cart-view', 'profile-view', 'admin-view'];
+    screens.forEach(s => {
+        const el = document.getElementById(s);
+        if (el) el.classList.add('hidden');
+    });
+
+    if (screenId === 'products') {
+        document.getElementById('product-grid').classList.remove('hidden');
+        document.getElementById('main-controls').classList.remove('hidden');
+    } else {
+        document.getElementById(screenId).classList.remove('hidden');
+    }
+}
+
+function filterAdminOrders() {
+    const searchInput = document.getElementById('admin-search');
+    if (!searchInput) return;
+
+    const query = searchInput.value.toLowerCase().trim();
+    
+    // Фильтруем оригинальный массив allOrders
+    const filtered = allOrders.filter(ord => {
+        const orderCode = generateOrderCode(ord.id).toLowerCase(); // Например "#abc123"
+        const userName = (ord.username || "").toLowerCase();
+        
+        // Ищем либо по логину, либо по коду (включая вариант без решетки)
+        return userName.includes(query) || 
+               orderCode.includes(query) || 
+               orderCode.replace('#', '').includes(query);
+    });
+
+    renderAdminOrders(filtered);
 }

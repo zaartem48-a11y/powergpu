@@ -847,3 +847,98 @@ header {
     text-align: center;
 }
 
+#admin-view {
+    padding: 20px 5%; /* 5% отступа слева и справа */
+    max-width: 1400px; /* Чтобы на огромных мониторах не растягивалось слишком сильно */
+    margin: 0 auto;
+}
+
+/* Сетка заказов: максимум 4 в ряд */
+.admin-orders-container {
+    display: grid;
+    /* Высчитываем ширину: (100% - зазоры) / 4 */
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 20px;
+    padding: 20px 0;
+}
+
+/* Адаптивность: если экран маленький, делаем 2 или 1 в ряд */
+@media (max-width: 1100px) {
+    .admin-orders-container { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+    .admin-orders-container { grid-template-columns: 1fr; }
+}
+
+.admin-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 15px;
+    transition: transform 0.2s;
+    height: fit-content;
+}
+
+.admin-card:hover {
+    transform: translateY(-3px);
+    border-color: #22c55e;
+}
+
+/* Стилизованный поиск */
+.admin-search-wrapper {
+    position: relative;
+    margin-bottom: 25px;
+    max-width: 500px;
+}
+
+#admin-search {
+    width: 100%;
+    padding: 12px 20px;
+    background: #0d1117;
+    border: 2px solid #30363d;
+    border-radius: 25px;
+    color: white;
+    outline: none;
+    transition: 0.3s;
+}
+
+#admin-search:focus {
+    border-color: #22c55e;
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.2);
+}
+
+.admin-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-more {
+    background: #30363d;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.btn-delete {
+    background: #442222;
+    color: #ff7b72;
+    border: 1px solid #6e2c2c;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.btn-delete:hover {
+    background: #6e2c2c;
+    color: white;
+}
+

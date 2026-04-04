@@ -122,6 +122,20 @@
     </div>
 </div>
 
+<div id="admin-view" class="profile-view hidden">
+    <div class="profile-header">
+        <h2>Управление заказами</h2>
+        <button class="filter-btn" onclick="showProducts()">← В магазин</button>
+    </div>
+    
+    <div class="admin-search-wrapper">
+        <input type="text" id="admin-search" placeholder="🔍 Поиск по коду или логину..." onkeyup="filterAdminOrders()">
+    </div>
+
+    <div id="admin-orders-list" class="admin-orders-container">
+        </div>
+</div>
+
     <script src="script.js"></script>
 </body>
 </html>
